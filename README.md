@@ -7,4 +7,5 @@ SpringBoot coding
 ## SpringBootDuridDemo	  多数据源  : mybatis + mysql + srpingboot + durid(连接池)
 ## spring-session         分布式 session : spring session + springboot 
 ## springbootCrudDemo     简单的crud项目  :  mysql + springboot 
+## Springboot-MongodbDemo   mongodb 多数据源
  
