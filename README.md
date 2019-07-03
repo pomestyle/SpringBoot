@@ -1,4 +1,4 @@
-## SpringBoot 代码整合 （麻烦给个start，谢谢）
+## SpringBoot 代码整合 （麻烦给个star，谢谢）
 
 SpringBoot coding
 
