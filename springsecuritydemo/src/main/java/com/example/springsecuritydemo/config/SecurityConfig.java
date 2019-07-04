@@ -44,7 +44,8 @@ public class SecurityConfig  extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.authorizeRequests()
-                .antMatchers("/resources/**", "/").permitAll()//配置不用登录可以访问的请求。
+                .antMatchers(
+                        "/css/**", "/").permitAll()//配置不用登录可以访问的请求。
                 //.antMatchers("/", "/home")
                 .antMatchers("/admin/**").hasRole("ADMIN")
                 .antMatchers("/content/**").hasAnyRole("ADMIN","USER") // 参数中任意角色的用户可访问  == .access("hasRole('ADMIN') or hasRole('USER')")
