@@ -9,4 +9,6 @@ SpringBoot coding
 ## 4 springbootCrudDemo              简单的crud项目  :  mysql + springboot 
 ## 5 springboot-MongodbDemo          mongodb 多数据源
 ## 6 springsecuritydemo              springsecuritydemo  security项目（不带数据库）
- 
+## 7 SpringBoot-quartz               整合quartz定时器 手动控制启动暂停任务
+## 8 Springboot-Redis-SETEX          redis setex 和 redis redlock 分布式锁
+## 9 springboot-atomikos	            atomikos 分布式事务
