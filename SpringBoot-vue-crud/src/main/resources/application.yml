@@ -1,0 +1,16 @@
+
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/test?useunicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: root
+    password: root
+
+mybatis:
+  type-aliases-package: com.vue.demo.vuedemo.pojo
+  mapper-locations: classpath:mapper/*Mapper.xml
+
+
+server:
+  port: 8081

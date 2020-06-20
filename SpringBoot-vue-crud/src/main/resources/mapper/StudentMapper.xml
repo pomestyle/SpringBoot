@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="com.vue.demo.vuedemo.dao.StudentDao">
+
+
+    <select id="findAll" resultType="com.vue.demo.vuedemo.pojo.Student">
+        SELECT * FROM student
+        where 1=1
+        <if test="name!=null and name !=''">
+            and name like '%'||#{name,jdbcType=VARCHAR}||'%'
+        </if>
+
+        <if test="age>0">
+            and name = #{age}
+        </if>
+
+    </select>
+
+
+    <insert id="insert">
+          insert into student(`name`,age) VALUES (#{name},#{age})
+    </insert>
+
+
+    <update id="update">
+            update
+                student
+            set
+                `name` = #{name},
+                age = #{age}
+
+            where
+                id = #{id}
+    </update>
+
+
+</mapper>
