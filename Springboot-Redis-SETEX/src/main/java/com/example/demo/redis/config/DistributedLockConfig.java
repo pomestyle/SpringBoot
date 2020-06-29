@@ -3,12 +3,14 @@ package com.example.demo.redis.config;
 import com.example.demo.redis.pojo.Lock;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDate;
 import java.util.concurrent.TimeUnit;
 
 
@@ -36,12 +38,9 @@ public class DistributedLockConfig {
     private final static long LOCK_TRY_TIMEOUT = 20 * 1000L;
 
 
+    @Autowired
+    private RedisTemplate redisTemplate;
 
-    private RedisTemplate template;
-
-    public void setTemplate(RedisTemplate template) {
-        this.template = template;
-    }
 
     /**
      * 尝试获取全局锁
@@ -108,8 +107,8 @@ public class DistributedLockConfig {
             }
             long startTime = System.currentTimeMillis();
             do {
-                if (!template.hasKey(lock.getName())) {
-                    ValueOperations<String, String> ops = template.opsForValue();
+                if (!redisTemplate.hasKey(lock.getName())) {
+                    ValueOperations<String, String> ops = redisTemplate.opsForValue();
                     ops.set(lock.getName(), lock.getValue(), lockExpireTime, TimeUnit.MILLISECONDS);
                     return true;
                 } else {
@@ -125,7 +124,7 @@ public class DistributedLockConfig {
                 //每隔多长时间尝试获取
                 Thread.sleep(tryInterval);
             }
-            while (template.hasKey(lock.getName()));
+            while (redisTemplate.hasKey(lock.getName()));
         } catch (InterruptedException e) {
             log.error(e.getMessage());
             return false;
@@ -143,7 +142,7 @@ public class DistributedLockConfig {
         }
 
         // setIfAbsent 底层封装命令 是 setNX()
-        boolean falg = template.opsForValue().setIfAbsent(lock.getName(), lock.getValue());
+        boolean falg = redisTemplate.opsForValue().setIfAbsent(lock.getName(), lock.getValue());
 
         return false;
     }
@@ -153,13 +152,32 @@ public class DistributedLockConfig {
      */
     public void releaseLock(Lock lock) {
         if (!StringUtils.isEmpty(lock.getName())) {
-            template.delete(lock.getName());
+            redisTemplate.delete(lock.getName());
         }
     }
 
 
-    public static void main(String[] args) {
+    /**
+     * setIfAbsent()
+     */
+    public void lock(){
+
+        Boolean aBoolean = redisTemplate.opsForValue().setIfAbsent("key1", "value", 2000, TimeUnit.SECONDS);
+
+        long ls = LocalDate.now().toEpochDay() + 5000;
+
+        while (!aBoolean){
+            aBoolean = redisTemplate.opsForValue().setIfAbsent("key1", "value", 2000, TimeUnit.SECONDS);
+
+            long ld = LocalDate.now().toEpochDay();
+            //超时或者抢到锁
+            if(aBoolean || ld > ls ){
+                redisTemplate.delete("key1");
+                return;
+            }
+        }
 
     }
+
 
 }

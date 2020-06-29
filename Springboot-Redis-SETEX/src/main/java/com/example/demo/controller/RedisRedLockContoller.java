@@ -1,11 +1,10 @@
 package com.example.demo.controller;
 
-import com.example.demo.redis.config.DistributedLockConfig;
-import com.example.demo.redis.pojo.Lock;
+
 import com.example.demo.redis.redlock.AquiredLockWorker;
 import com.example.demo.redis.redlock.RedisLocker;
+
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
