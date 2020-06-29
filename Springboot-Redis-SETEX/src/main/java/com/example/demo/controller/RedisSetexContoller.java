@@ -4,6 +4,7 @@ import com.example.demo.redis.config.DistributedLockConfig;
 import com.example.demo.redis.pojo.Lock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -13,7 +14,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @description:  基于redis setex 分布式锁
+ * @description: 基于redis setex 分布式锁
  * @author: Administrator
  * @create: 2020-05-01 22:28
  **/
@@ -26,6 +27,60 @@ public class RedisSetexContoller {
 
     @Autowired
     RedisTemplate redisTemplate;
+
+
+    @RequestMapping("setIfAbsent")
+    public String setIfAbsentTest() {
+        return setIfAbsent();
+    }
+
+    //缓存击穿 分布式锁使用
+    public String setIfAbsent() {
+        //分布式锁 加锁  大量并发过来只有一个能拿到锁，然后其他并发线程进行自旋，等待第一个获取到分布式锁的线程进行 查询数据,存取到redis中,然后其他并发线程再获取锁直接从redis中获取数据.
+        Boolean aBoolean = redisTemplate.opsForValue().setIfAbsent("keyL:loc", 1, 1000, TimeUnit.SECONDS);
+
+        //拿到锁
+        if (aBoolean) {
+
+            //先查询缓存有没有数据
+            if (false) {
+                //没数据  查询数据
+                String xml = "从数据库查询到的数据";
+                if (!StringUtils.isEmpty(xml)) {
+                    //加入缓存
+                    redisTemplate.opsForValue().set("key:data", 123);
+                } else {
+                    //防止缓存击穿 将空串设置到redis中
+                    redisTemplate.opsForValue().set("key:data", null);
+                }
+
+                //释放锁
+                redisTemplate.delete("keyL:loc");
+
+                return "ok";
+
+            } else {
+
+                //释放锁
+                redisTemplate.delete("keyL:loc");
+
+                //从缓存中获取
+                return "ok";
+            }
+
+
+        } else {
+
+            try {
+                Thread.sleep(3_000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            //自旋获取锁
+            return setIfAbsent();
+        }
+    }
 
 
     @RequestMapping("test")
@@ -45,7 +100,6 @@ public class RedisSetexContoller {
         }
         return "hello world!";
     }
-
 
 
     @RequestMapping("test1")
