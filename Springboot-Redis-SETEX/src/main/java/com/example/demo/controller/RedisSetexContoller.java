@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -36,50 +38,71 @@ public class RedisSetexContoller {
 
     //缓存击穿 分布式锁使用
     public String setIfAbsent() {
-        //分布式锁 加锁  大量并发过来只有一个能拿到锁，然后其他并发线程进行自旋，等待第一个获取到分布式锁的线程进行 查询数据,存取到redis中,然后其他并发线程再获取锁直接从redis中获取数据.
-        Boolean aBoolean = redisTemplate.opsForValue().setIfAbsent("keyL:loc", 1, 1000, TimeUnit.SECONDS);
 
-        //拿到锁
-        if (aBoolean) {
+        //查询到的数据
+        String data = "";
 
-            //先查询缓存有没有数据
-            if (false) {
+        //分布式锁
+        String key = "keyL:loc:" + "sku";
+
+        //缓存中没有
+        if (true) {
+
+            //如果缓存中没有，查询mysql
+            if (StringUtils.isEmpty(null)) {
                 //没数据  查询数据
                 String xml = "从数据库查询到的数据";
-                if (!StringUtils.isEmpty(xml)) {
-                    //加入缓存
-                    redisTemplate.opsForValue().set("key:data", 123);
-                } else {
-                    //防止缓存击穿 将空串设置到redis中
-                    redisTemplate.opsForValue().set("key:data", null);
+                data = xml;
+
+                //设置一个token锁 防止第一个线程请求进来，还在查询数据库（数据库查询超时）的情况下，第二个请求进来删除了第一个请求的key
+                // 必须是当前线程释放当前线程的锁
+                String uuidLock = UUID.randomUUID().toString();
+
+                //设置分布式锁
+                //分布式锁 加锁  大量并发过来只有一个能拿到锁，然后其他并发线程进行自旋，等待第一个获取到分布式锁的线程进行 查询数据,存取到redis中,然后其他并发线程再获取锁直接从redis中获取数据.
+                Boolean aBoolean = redisTemplate.opsForValue().setIfAbsent(key, uuidLock, 5 * 1000, TimeUnit.SECONDS);
+
+                if (aBoolean != null && aBoolean) {
+                    //设置成功，在10秒的过期时间内访问数据库
+                    //mysql查询结果存入redis
+                    if (!StringUtils.isEmpty(xml)) {
+                        //加入缓存
+                        redisTemplate.opsForValue().set("key:data", 123);
+                    } else {
+                        //防止缓存击穿 将空串设置到redis中
+                        redisTemplate.opsForValue().set("key:data", null);
+                    }
+
+
+
+                    //todo 使用lua脚本释放锁 待写...
+
+                    //将分布锁释放
+                    String tokenKey = (String) redisTemplate.opsForValue().get(key);
+
+                    // 用token确认删除的是自己的sku的锁
+                    if (StringUtils.isEmpty(tokenKey) && uuidLock.equals(tokenKey)) {
+                        // --------------------------  如果redis中 tokenKey 获取到了，在删除之前刚好失效了，此时这里另外一个或多个线程进来进行业务逻辑操作，会出问题--------------------------
+                        //这里释放锁需要原子性操作, 解决办法： 利用lua脚本 在redis中查询 tokenLock 锁的时候 如果发现了就删除。
+                        //释放锁
+                        redisTemplate.delete("keyL:loc");
+                    }
+
                 }
 
-                //释放锁
-                redisTemplate.delete("keyL:loc");
-
-                return "ok";
 
             } else {
 
-                //释放锁
-                redisTemplate.delete("keyL:loc");
-
-                //从缓存中获取
-                return "ok";
+                //自旋获取锁
+                return setIfAbsent();
             }
-
 
         } else {
+            //缓存中有数据 直接返回
 
-            try {
-                Thread.sleep(3_000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
-            //自旋获取锁
-            return setIfAbsent();
+            data = "缓存中有数据直接返回！";
         }
+        return data;
     }
 
 
