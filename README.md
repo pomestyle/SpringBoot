@@ -13,3 +13,4 @@ SpringBoot coding
 ## 8  springboot-Redis-SETEX          redis setex 和 redis redlock 分布式锁
 ## 9  springboot-atomikos	            atomikos 分布式事务
 ## 10 springBoot-redis                整合redis主从和集群模式
+## 11 SpringBoot-RabbitMq             整合Rabbit五种消息队列类型
